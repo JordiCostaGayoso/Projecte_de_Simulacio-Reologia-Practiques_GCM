@@ -1,0 +1,8 @@
+import math as m
+import numpy as np
+
+def debye(x, t, g0):
+    return np.exp(-x / t) * g0
+
+def kww( x, ptau, pbeta, pg0):
+    return np.exp(-(x / ptau)**pbeta) * pg0

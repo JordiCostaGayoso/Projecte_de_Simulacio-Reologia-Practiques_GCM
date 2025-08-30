@@ -1,0 +1,58 @@
+import math as m
+import numpy as np
+import matplotlib.pyplot as plt
+import figure_format_eloi
+import stress_functions as stress
+from scipy import integrate
+
+fig, axs = plt.subplots(2,1, figsize=(12,15), dpi=300)
+ax1 = axs[0]
+ax1.set_xlabel(r'$t$ (s)')
+ax1.set_ylabel(r'$\sigma(t)$ (MPa)') 
+
+ax2 = axs[1]
+ax2.set_xlabel(r'$t$ (s)')
+ax2.set_ylabel(r'$\epsilon(t)$ (%)')
+
+plt.subplots_adjust(hspace=0.3)
+
+dt = 1  
+t1 = 0 
+t1f = 1000 
+t2 = 2000 
+
+t=np.arange(1.,t2,dt)
+s = t*0
+e = t*0
+de = t*0
+
+epsilon0 = 1e-3 # Set strain of first step
+
+tau = 1000 # s
+beta = 0.5
+G0 = 50000 #MPa
+
+it1 = int(t1/dt)
+de[it1] = epsilon0
+
+i1f = int(t1f/dt)
+i2 = int(t2/dt)
+
+for i in range(i1f,i2-1):
+    f = 0.
+    for j in range(i):
+        f = f + stress.kww(t[i]-t[j], tau, beta, G0)*de[j]
+        de[i]= - f / stress.kww(dt, tau, beta, G0)
+
+for i in np.arange(len(t)):
+    tt = t[i]
+    h = np.heaviside(t - tt, 0.)
+    gt = np.multiply(h,t-tt) # tt1 = np.multiply(h1, t - t1)
+    g = stress.kww(gt,tau,beta,G0) * de[i]
+    ds = np.multiply(h,g)
+    s = s + ds
+    e[i] = np.sum(de[0:i])
+
+ax1.plot(t, s, '--o', color='blue', fillstyle='full', markersize=5)
+ax2.plot(t, e*100, '--o', color='red', fillstyle='full', markersize=5)
+plt.show()

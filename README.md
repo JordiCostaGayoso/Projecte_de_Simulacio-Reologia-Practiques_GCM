@@ -1,0 +1,1 @@
+Projecte de simulació d'assajos de fluència i relaxació de tensions en materials viscoelàstics. Realitzats durant la meva estada de pràctiques al Grup de Caracterització de Materials (GCM) de la Universitat Politècnica de Catalunya (UPC), sota la supervisió del Dr. Eloi Pineda. 

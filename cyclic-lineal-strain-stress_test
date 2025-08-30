@@ -1,0 +1,86 @@
+import math as m
+import numpy as np
+import matplotlib.pyplot as plt
+import figure_format_eloi
+import stress_functions as stress
+
+def G( x, ptau, pbeta, pg0):
+    return np.exp(-(x / ptau)**pbeta) * pg0
+
+fig, axs = plt.subplots(3,1, figsize=(12,15), dpi=300)
+ax1 = axs[0]
+ax1.set_xlabel(r'$t$ (s)')
+ax1.set_ylabel(r'$\sigma(t)$ (MPa)') 
+
+ax2 = axs[1]
+ax2.set_xlabel(r'$t$ (s)')
+ax2.set_ylabel(r'$\epsilon(t)$ (%)')
+
+ax3 = axs[2]
+ax3.set_xlabel(r'$\sigma(t) $ (MPa)')
+ax3.set_ylabel(r'$\epsilon(t)$ (%)')
+
+
+plt.subplots_adjust(hspace=0.3)
+
+dt = 1 
+t1 = 0 
+t2 = 1000
+t3 = 2000
+t4=3000
+t5=4000
+t6=5000
+t7=6000
+t8=7000
+
+t_inicial=[t1,t2,t3,t4,t5,t6,t7,t8]
+
+t=np.arange(1.,t8+dt,dt)
+s = t*0
+e = t*0
+e2=t*0
+de = t*0
+epsilon0 = 1e-3 
+
+def loading(pt,pepsilon0):
+    return pepsilon0*pt
+
+tau = 1000 
+beta = 0.5
+G0 = 50000 
+
+it_inicial=[int(t/dt) for t in t_inicial]
+
+for k in range(len(it_inicial)-1):
+    if k%2==0:
+        for i in range(it_inicial[k],it_inicial[k+1]):
+            j=i-it_inicial[k]
+            e[i]=loading(t[j],epsilon0)
+            de[i]=e[i]-e[i-1]
+    else:
+        for i in range(it_inicial[k],it_inicial[k+1]):
+            j=i-it_inicial[k]
+            e[i]=1-loading(t[j],epsilon0)
+            de[i]=e[i]-e[i-1]
+            
+for i in np.arange(len(t)):
+    tt = t[i]
+    h = np.heaviside(t - tt, 0.)
+    gt = np.multiply(h, t-tt) # tt1 = np.multiply(h1, t - t1)
+    g = stress.kww(gt, tau, beta, G0) * de[i]
+    ds = np.multiply(h, g)
+    s = s + ds
+    e2[i] = np.sum(de[0:i])
+
+e_periode=e[4000:6000]*100
+s_periode=s[4000:6000]
+
+
+ax1.plot(t, s, '--o', color='blue', fillstyle='full', markersize=5)
+ax2.plot(t, e2*100, '--o', color='red', fillstyle='full', markersize=5)
+ax3.plot(s_periode,e_periode,'--o', color='green', fillstyle='full', markersize=5)
+plt.fill(s_periode, e_periode, alpha=0.3, color='orange')
+plt.show()
+
+energy_loss = 0.5 * np.abs(np.dot(s_periode[:-1], e_periode[1:]) - np.dot(s_periode[1:], e_periode[:-1]))
+print(energy_loss)

@@ -1,0 +1,86 @@
+import math as m
+import numpy as np
+import matplotlib.pyplot as plt
+import figure_format_eloi
+import stress_functions as stress
+
+fig, axs = plt.subplots(3,1, figsize=(12,12), dpi=300)
+ax1 = axs[0]
+ax1.set_xlabel(r'$t$ (s)')
+ax1.set_ylabel(r'$\sigma(t)$ (MPa)') 
+
+ax2 = axs[1]
+ax2.set_xlabel(r'$t$ (s)')
+ax2.set_ylabel(r'$\epsilon(t)$ (%)')
+
+ax3 = axs[2]
+ax3.set_xlabel(r'$\sigma(t)$ (MPa)')
+ax3.set_ylabel(r'$\epsilon(t)$ (%)')
+
+plt.subplots_adjust(hspace=0.3)
+
+
+dt = 1 
+tA = 0 
+tB = 50 
+tC = 1600
+
+
+t=np.arange(1.,tC,dt)
+s = t*0
+e = t*0
+de = t*0
+
+frec=0.01
+def funcio_sigma(pt,psigma0):
+    return psigma0*np.sin(frec*pt)
+
+sigma0=100
+
+tau = 1000
+T=(2*np.pi)/frec
+beta = 1
+G0 = 40000
+
+for i in range(len(t)):
+    f = 0.
+    for j in range(i):
+        f = f + stress.kww(t[i]-t[j], tau, beta, G0) * de[j]
+        de[i]= (funcio_sigma(t[i],sigma0) - f) / stress.kww(dt, tau, beta, G0)
+
+for i in np.arange(len(t)):
+    tt = t[i]
+    h = np.heaviside(t - tt, 0.)
+    gt = np.multiply(h, t-tt) # tt1 = np.multiply(h1, t - t1)
+    g = stress.kww(gt, tau, beta, G0) * de[i]
+    ds = np.multiply(h, g)
+    s = s + ds
+    e[i] = np.sum(de[0:i])
+    
+min_s=np.argmin(s)
+min_e=np.argmin(e)
+desfase= np.abs(min_s-min_e)*frec
+print(desfase)
+epsilon0=np.max(e)
+    
+def aprox(x):
+    if round(x)<5:
+        return round(x+0.5)
+    else:
+        return round(x)
+
+periode=aprox(T+desfase)
+
+e_periode=e[850:850+periode]*100
+s_periode=s[850:850+periode]
+
+
+ax1.plot(t, s, '--o', color='blue', fillstyle='full', markersize=5)
+ax2.plot(t, e*100, '--o', color='red', fillstyle='full', markersize=5)
+ax3.plot(e_periode,s_periode,'--o', color='green', fillstyle='full', markersize=5)
+plt.fill(e_periode, s_periode, alpha=0.3, color='orange')
+plt.show()
+
+energy_loss = 0.5 * np.abs(np.dot(s_periode[:-1], e_periode[1:]) - np.dot(s_periode[1:], e_periode[:-1]))
+
+print(energy_loss)

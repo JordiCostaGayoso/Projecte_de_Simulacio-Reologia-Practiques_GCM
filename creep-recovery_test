@@ -1,0 +1,65 @@
+import math as m
+import numpy as np
+import matplotlib.pyplot as plt
+import figure_format_eloi
+import stress_functions as stress
+
+fig, axs = plt.subplots(2,1, figsize=(12,12), dpi=300)
+ax1 = axs[0]
+ax1.set_xlabel(r'$t$ (s)')
+ax1.set_ylabel(r'$\sigma(t)$ (MPa)') 
+
+ax2 = axs[1]
+ax2.set_xlabel(r'$t$ (s)')
+ax2.set_ylabel(r'$\epsilon(t)$ (%)')
+
+plt.subplots_adjust(hspace=0.3)
+
+dt = 1
+tA = 0 
+tB = 3*360 
+tC = tB + 3*360 
+
+t=np.arange(1.,tC,dt)
+s = t*0
+e = t*0
+de = t*0
+
+sigmaA = 200 
+sigmaB = 0 
+
+tau = 1600 
+beta = 0.487
+G0 = 40000 
+
+iA = int(tA/dt)
+iB = int(tB/dt)
+
+for i in range(iA,iB-1):
+    f = 0.
+    for j in range(i):
+        f = f + stress.kww(t[i]-t[j], tau, beta, G0) * de[j]
+        de[i]= (sigmaA - f) / stress.kww(dt, tau, beta, G0)    
+
+iB = int(tB/dt)
+iC = int(tC/dt)
+
+for i in range(iB,iC-1):
+    f = 0.
+    for j in range(i):
+        f = f + stress.kww(t[i]-t[j], tau, beta, G0) * de[j]
+        de[i]= (sigmaB - f) / stress.kww(dt, tau, beta, G0)    
+
+for i in np.arange(len(t)):
+    tt = t[i]
+    h = np.heaviside(t - tt, 0.)
+    gt = np.multiply(h, t-tt) # tt1 = np.multiply(h1, t - t1)
+    g = stress.kww(gt, tau, beta, G0) * de[i]
+    ds = np.multiply(h, g)
+    s = s + ds
+    e[i] = np.sum(de[0:i])
+
+
+ax1.plot(t, s, '--o', color='blue', fillstyle='full', markersize=5)
+ax2.plot(t, e*100, '--o', color='red', fillstyle='full', markersize=5)
+plt.show()

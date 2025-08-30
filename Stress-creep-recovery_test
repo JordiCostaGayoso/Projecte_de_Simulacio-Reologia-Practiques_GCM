@@ -1,0 +1,70 @@
+import math as m
+import numpy as np
+import matplotlib.pyplot as plt
+import figure_format_eloi
+import stress_functions as stress
+
+def G( x, ptau, pbeta, pg0):
+    return np.exp(-(x / ptau)**pbeta) * pg0
+
+fig, axs = plt.subplots(2,1, figsize=(12,15), dpi=300)
+ax1 = axs[0]
+ax1.set_xlabel(r'$t$ (s)')
+ax1.set_ylabel(r'$\sigma(t)$ (MPa)') 
+
+ax2 = axs[1]
+ax2.set_xlabel(r'$t$ (s)')
+ax2.set_ylabel(r'$\epsilon(t)$ (%)')
+
+
+plt.subplots_adjust(hspace=0.3)
+
+
+dt = 1 
+t1 = 0 
+t2 = 1000 
+t3 = 2000 
+t4=3000
+t5=4000
+t6=5000
+
+t_inicial=[t1,t2,t3,t4,t5]
+
+t=np.arange(1.,t5,dt)
+s = t*0
+e = t*0
+de = t*0
+epsilon0 = 1e-3 
+epsilon1= 2*epsilon0
+
+tau = 1000 
+beta = 0.5
+G0 = 50000 
+
+it_inicial=[int(t/dt) for t in t_inicial]
+
+de_inicial=[0,epsilon0, epsilon1,0]
+creep=[200,0,0,0]
+
+for k in range(len(it_inicial)-1):
+    if de_inicial[k]==0:
+        for i in range(it_inicial[k],it_inicial[k+1]-1):
+            f = 0.
+            for j in range(i):
+                f = f + G(t[i]-t[j], tau, beta, G0)*de[j]
+                de[i]= (creep[k] - f) / stress.kww(dt, tau, beta, G0)
+    else:
+        de[it_inicial[k]]=de_inicial[k]
+
+for i in np.arange(len(t)):
+        tt = t[i]
+        h = np.heaviside(t - tt, 0.)
+        gt = np.multiply(h,t-tt) # tt1 = np.multiply(h1, t - t1)
+        g = G(gt,tau,beta,G0) * de[i]
+        ds = np.multiply(h,g)
+        s = s + ds
+        e[i]=np.sum(de[0:i])
+
+ax1.plot(t, s, '--o', color='blue', fillstyle='full', markersize=5)
+ax2.plot(t, e*100, '--o', color='red', fillstyle='full', markersize=5)
+plt.show()
